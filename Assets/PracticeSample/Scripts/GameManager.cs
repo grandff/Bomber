@@ -10,6 +10,9 @@ public class GameManager : MonoBehaviour
     public BoardManager boardScript;
     private int level = 3;
 
+    public int playerFoodPoints = 100;      // 음식점수
+    [HideInInspector] public bool playersTurn = true;       // hide in inspector는 변수는 public이나 에디터에서 숨길 수 있음
+
     void Awake() {
         if (instance == null){
             instance = this;
@@ -26,10 +29,9 @@ public class GameManager : MonoBehaviour
         boardScript.SetupScene(level);
     }
 
-    // Start is called before the first frame update
-    void Start()
-    {
-        
+    // 게임오버 처리
+    public void GameOver(){
+        enabled = false;
     }
 
     // Update is called once per frame
