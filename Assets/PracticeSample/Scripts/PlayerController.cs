@@ -29,7 +29,7 @@ public class PlayerController : MovingObject
     }
 
     // attempt move 함수
-    protected overrid void AttemptMove <T> (int xDir, int yDir){        // 여기서 T는 움직이는 오브젝트가 마주칠 대상의 컴포넌트의 타입을 가리키려고 사용함
+    protected override void AttemptMove <T> (int xDir, int yDir){        // 여기서 T는 움직이는 오브젝트가 마주칠 대상의 컴포넌트의 타입을 가리키려고 사용함
         food -= 1;  // 음식점수 하나 감소
         base.AttemptMove <T> (xDir, yDir);      // 부모 클래스의 attempt move 호출
         RaycastHit2D hit;
@@ -47,13 +47,28 @@ public class PlayerController : MovingObject
         int horizontal = 0;
         int vertical = 0;
 
-        horizontal = (int) Input.GetAxisRow("Horizontal");
-        vertical = (int) Input.GetAxisRow("Vertical");
+        horizontal = (int) Input.GetAxisRaw("Horizontal");
+        vertical = (int) Input.GetAxisRaw("Vertical");
 
         if (horizontal != 0) vertical = 0;      // 대각선 이동 방지
 
         if (horizontal != 0 || vertical != 0){      //  플레이어 이동 감지
             AttemptMove<Wall> (horizontal, vertical);   
+        }
+    }
+
+    // 모든 오브젝트와 상호 작용을 하기 위해 ontriggerenter2d 사용
+    private void OnTriggerEnter2D(Collider2D other) {
+        // 출구에 도착한다면
+        if (other.tag == "Exit"){
+            Invoke("Restart", restartLevelDelay);       // 1초 후 재시작
+            enabled = false;
+        }else if (other.tag == "Food"){             // 음식을 먹었다면
+            food += pointsPerFood;
+            other.gameObject.SetActive(false);
+        }else if (other.tag == "Soda"){             // 소다를 먹었다면
+            food += pointsPerSoda;
+            other.gameObject.SetActive(false);
         }
     }
 
@@ -65,8 +80,22 @@ public class PlayerController : MovingObject
         }
     }
 
-    // 7분 58초부터 들어야함..
-    protected override void OnCantMove <T> (T component){
+    // 잃는 점수 계산
+    public void LoseFood(int loss){
+        animator.SetTrigger("playerHit");
+        food -= loss;
+        CheckIfGameOver();
+    }
 
+    // 레밸 리로드를 위한 함수 
+    private void Restart(){     // 출구에 도착했을 경우 
+        Application.LoadLevel(Application.loadedLevel);
+    }
+
+    // 플레이어가 이동하려는 공간에 벽이 있고 이에 막히는 경우의 행동
+    protected override void OnCantMove <T> (T component){
+        Wall hitWall = component as Wall;
+        hitWall.DamageWall(wallDamage);     // 플레이어가 얼마나 벽에 데미지를 줄지 알리기 위해 wallDamage를 입력해서 넣어줌
+        animator.SetTrigger("playerChop");  // 애니메이터 컴포넌트의 chop 트리거 호출
     }
 }
